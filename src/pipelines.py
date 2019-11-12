@@ -5,20 +5,20 @@ Created on 24.09.2019
 
 Copyright 2019 Maximilian Pensel <maximilian.pensel@gmx.de>
 
-This file is part of OpenWebScraper.
+This file is part of OWS-scrapy-wrapper.
 
-OpenWebScraper is free software: you can redistribute it and/or modify
+OWS-scrapy-wrapper is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-OpenWebScraper is distributed in the hope that it will be useful,
+OWS-scrapy-wrapper is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with OpenWebScraper.  If not, see <https://www.gnu.org/licenses/>.
+along with OWS-scrapy-wrapper.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 import os
@@ -29,15 +29,10 @@ import pandas
 import common
 from common import CrawlSpecification
 
-#import core
-#from core.Workspace import WorkspaceManager
-#from modules.crawler import filemanager
-#from modules.crawler.model import CrawlSpecification
 
 ###
 # Crawl Finalizers
 ###
-
 
 class CrawlFinalizer:
 
@@ -48,62 +43,13 @@ class CrawlFinalizer:
         pass
 
 
-class LocalCrawlFinalizer(CrawlFinalizer):
-    LANGSTATS_ID = "allowed_languages"
-
-    def __init__(self, spec: CrawlSpecification, settings: {}):
-        super().__init__(spec)
-        self.log = common.simple_logger("LocalCrawlFinalizer", file_path=os.path.join(WorkspaceManager().get_log_path(),
-                                                                                    self.crawl_specification.name,
-                                                                                    "scrapy.log"))
-
-    def finalize_crawl(self, data: {} = None):
-        self.log.info("Finalizing crawl ...")
-        if data is None:
-            data = dict()
-
-        if LocalCrawlFinalizer.LANGSTATS_ID in data:
-            # save LANGSTATS
-            self.log.info("Saving language statistics to ")
-            filemanager.save_dataframe(self.crawl_specification.name,
-                                       LocalCrawlFinalizer.LANGSTATS_ID,
-                                       data[LocalCrawlFinalizer.LANGSTATS_ID])
-
-        stats_df = pandas.DataFrame(columns=["total paragraphs", "unique paragraphs", "unique urls"])
-        stats_df.index.name = "url"
-        one_incomplete = False
-        for csv in filemanager.get_datafiles(self.crawl_specification.name):
-            # As soon as there still is an incomplete file set one_incomplete = True
-            one_incomplete = one_incomplete or filemanager.incomplete_flag in csv
-            try:
-                df = filemanager.load_crawl_data(self.crawl_specification.name, csv, convert=False)
-                stats_df.at[csv, "total paragraphs"] = df.count()["url"]
-                if df.empty:
-                    stats_df.at[csv, "unique paragraphs"] = 0
-                    stats_df.at[csv, "unique urls"] = 0
-                else:
-                    unique = df.nunique()
-                    stats_df.at[csv, "unique paragraphs"] = unique["content"]
-                    stats_df.at[csv, "unique urls"] = unique["url"]
-            except Exception as exc:
-                stats_df.at[csv.replace(".csv", ""), "total paragraphs"] = "Could not process"
-                self.log.exception("Error while analyzing results. {0}: {1}".format(type(exc).__name__, exc))
-
-        filemanager.save_dataframe(self.crawl_specification.name, "stats", stats_df)
-
-        if not one_incomplete:  # and not DEBUG:
-            filemanager.move_crawl_specification(self.crawl_specification.name)
-
-        self.log.info("Done finalizing crawl.")
-
-
 class RemoteCrawlFinalizer(CrawlFinalizer):
 
     def __init__(self, spec: CrawlSpecification, settings: {}):
         super().__init__(spec)
-        self.log = core.simple_logger("RemoteCrawlFinalizer", file_path=os.path.join(WorkspaceManager().get_log_path(),
-                                                                                     self.crawl_specification.name,
-                                                                                     "scrapy.log"))
+        self.log = common.simple_logger("RemoteCrawlFinalizer", file_path=os.path.join(self.crawl_specification.logs,
+                                                                                       self.crawl_specification.name,
+                                                                                       "scrapy.log"))
 
     def finalize_crawl(self, data: {} = None):
         self.log.info("Finalizing crawl ...")
@@ -114,13 +60,13 @@ class RemoteCrawlFinalizer(CrawlFinalizer):
         #       the workspace (using filemanager) and compose an http request for further processing
 
         # fetching crawl results
-        for csv_filepath in filemanager.get_datafiles(self.crawl_specification.name, abspath=True):
+        for csv_filepath in os.listdir(self.crawl_specification.output):
             with open(csv_filepath, mode="r", encoding="utf-8") as csv_file:
                 csv_content = csv_file.read()
                 # TODO: add this content to a dict in order to compose http request
 
         # fetching log contents
-        for log_filename in os.listdir(os.path.join(WorkspaceManager().get_log_path(), self.crawl_specification.name)):
+        for log_filename in os.listdir(os.path.join(self.crawl_specification.logs, self.crawl_specification.name)):
             log_filepath = os.path.abspath(log_filename)
             with open(log_filepath, mode="r", encoding="utf-8") as log_filename:
                 log_content = log_filename.read()

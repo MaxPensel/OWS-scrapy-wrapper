@@ -10,28 +10,24 @@ Created on 15.06.2019
 
 Copyright 2019 Maximilian Pensel <maximilian.pensel@gmx.de>
 
-This file is part of OpenWebScraper.
+This file is part of OWS-scrapy-wrapper.
 
-OpenWebScraper is free software: you can redistribute it and/or modify
+OWS-scrapy-wrapper is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-OpenWebScraper is distributed in the hope that it will be useful,
+OWS-scrapy-wrapper is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with OpenWebScraper.  If not, see <https://www.gnu.org/licenses/>.
+along with OWS-scrapy-wrapper.  If not, see <https://www.gnu.org/licenses/>.
 """
 import logging
 import sys
 import os
-
-#if __name__ == "__main__":
-    # scrapy_wrapper is expected to be executed from repository root and repository root is needed on PATH
-    #sys.path.append(os.path.abspath(os.path.curdir))
 
 import common
 from common import CrawlSpecification
@@ -44,12 +40,8 @@ from urllib.parse import urlparse
 from scrapy.settings import Settings
 from langdetect import DetectorFactory
 
-#import core
-#from core.Workspace import WorkspaceManager, LOG_DIR as WS_LOG_DIR
-#from modules.crawler import filemanager
 
-
-ACCEPTED_LANG = ["de", "en"]  # will be dynamically set through the UI in the future
+ACCEPTED_LANG = ["de", "en"]
 LANGSTATS_ID = "allowed_languages"
 LANGSTATS = pandas.DataFrame(columns=ACCEPTED_LANG)
 LANGSTATS.index.name = "url"
@@ -196,7 +188,6 @@ if __name__ == '__main__':
         scrapy_settings.set("LOG_FILE", os.path.join(crawl_specification.logs, "scrapy.log"))
 
     scrapy_settings.set("ITEM_PIPELINES", crawl_specification.pipelines)
-
 
     MLOG.info("Initiating scrapy crawler process")
     process = CrawlerProcess(settings=scrapy_settings)

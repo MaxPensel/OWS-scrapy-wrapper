@@ -7,7 +7,7 @@ Copyright 2019 Maximilian Pensel <maximilian.pensel@gmx.de>
 
 This file is part of OWS-scrapy-wrapper.
 
-OpenWebScraper is free software: you can redistribute it and/or modify
+OWS-scrapy-wrapper is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
@@ -18,7 +18,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with OpenWebScraper.  If not, see <https://www.gnu.org/licenses/>.
+along with OWS-scrapy-wrapper.  If not, see <https://www.gnu.org/licenses/>.
 """
 import importlib
 import json
