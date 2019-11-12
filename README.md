@@ -8,7 +8,7 @@ that can be created using
 The OWS-scrapy-wrapper is standalone in the sense that it takes a run 
 specification json file as input, to determine what urls to crawl, how 
 to process responses, where to store retrieved data, etc. (see 
-[specification.json](#specification.json)).
+[specification.json](#specificationjson)).
 Components such as the parsing of incoming http-responses and further 
 processing of the parsed data (in pipelines or finalizers) can be 
 specified in the run specification, in order to keep extensibility of 
