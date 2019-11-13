@@ -26,8 +26,8 @@ import shutil
 from urllib.parse import urlparse
 
 import pandas
-import common
-from common import CrawlSpecification
+import shared
+from shared import CrawlSpecification
 
 
 ###
@@ -47,7 +47,7 @@ class RemoteCrawlFinalizer(CrawlFinalizer):
 
     def __init__(self, spec: CrawlSpecification, settings: {}):
         super().__init__(spec)
-        self.log = common.simple_logger("RemoteCrawlFinalizer", file_path=os.path.join(self.crawl_specification.logs,
+        self.log = shared.simple_logger("RemoteCrawlFinalizer", file_path=os.path.join(self.crawl_specification.logs,
                                                                                        self.crawl_specification.name,
                                                                                        "scrapy.log"))
 
