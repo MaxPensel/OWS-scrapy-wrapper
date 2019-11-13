@@ -1,10 +1,10 @@
 import pika
 
-from modules.crawler.common.config import config
-from modules.crawler.common.logger import log
+from common.config import config
+from common.logger import log
 
-from modules.crawler.common.messaging.consumer import Consumer
-from modules.crawler.scrapy_wrapper import run_crawl
+from common.messaging.consumer import Consumer
+from scrapy_wrapper import run_crawl
 
 class TaskConsumer(Consumer):
     """Consumes crawl tasks."""

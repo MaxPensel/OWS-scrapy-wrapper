@@ -1,6 +1,6 @@
 import pytest
 
-from modules.crawler.remote.task_producer import send_task
+from remote.task_producer import send_task
 
 
 def test_send_task(spec_single):

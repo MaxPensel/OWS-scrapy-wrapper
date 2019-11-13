@@ -4,7 +4,7 @@
 import toml
 import os
 
-from modules.crawler.common.logger import log
+from common.logger import log
 
 
 # class Config(object):

@@ -1,7 +1,7 @@
 {
     "blacklist": [],
 	  "finalizers": {
-		"modules.crawler.scrapy.pipelines.RemoteCrawlFinalizer": {}
+		"scrapy.pipelines.RemoteCrawlFinalizer": {}
 	  },
     "logs": "logs",
     "name": "spec_single",

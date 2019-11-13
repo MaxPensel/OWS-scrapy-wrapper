@@ -3,7 +3,7 @@
 import pika
 from datetime import datetime as dt
 
-from modules.crawler.common.logger import log
+from common.logger import log
 from .establish_rmq_connection import establish_rmq_connection
 
 

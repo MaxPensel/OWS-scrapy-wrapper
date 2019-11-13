@@ -1,8 +1,8 @@
 import json
 
-from modules.crawler.common.config import config
+from common.config import config
 
-from modules.crawler.common.messaging.producer import Producer
+from common.messaging.producer import Producer
 
 
 result_producer = Producer(config.rmq['host'], config.rmq['port'], config.rmq['heartbeat'])

@@ -5,10 +5,10 @@ import sys
 sys.path.insert(1, '/app/OpenWebScraper')
 
 # Local modules
-from modules.crawler.common.config import config
-from modules.crawler.common.logger import log
+from common.config import config
+from common.logger import log
 
-from modules.crawler.remote.task_consumer import task_consumer
+from remote.task_consumer import task_consumer
 
 # import time
 # while True:

@@ -4,7 +4,7 @@ import pika
 import socket
 import time
 
-from modules.crawler.common.logger import log
+from common.logger import log
 
 
 def isOpen(ip, port, timeout):

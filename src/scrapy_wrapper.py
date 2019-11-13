@@ -165,7 +165,7 @@ def run_crawl(call_parameter, worker_flag=False):
         crawl_specification.deserialize(call_parameter)
         # # set finalizer for crawl worker
         # crawl_specification.finalizers = {
-        # "modules.crawler.scrapy.pipelines.RemoteCrawlFinalizer": {}
+        # "scrapy.pipelines.RemoteCrawlFinalizer": {}
         # }
 
     if not crawl_specification:
