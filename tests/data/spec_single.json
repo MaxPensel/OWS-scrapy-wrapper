@@ -1,0 +1,27 @@
+{
+    "blacklist": [],
+	  "finalizers": {
+		"modules.crawler.scrapy.pipelines.RemoteCrawlFinalizer": {}
+	  },
+    "logs": "logs",
+    "name": "spec_single",
+    "output": "results",
+    "parser": "parsers.ParagraphParser",
+    "parser_data": {
+        "allowed_languages": [
+            "de",
+            "en"
+        ],
+        "keep_langdetect_errors": false,
+        "xpaths": [
+            "//p",
+            "//td"
+        ]
+    },
+    "pipelines": {
+        "pipelines.Paragraph2CsvPipeline": 300
+    },
+    "urls": [
+        "https://crawlme.maxpensel.de"
+    ]
+}
