@@ -47,11 +47,6 @@ LANGSTATS = pandas.DataFrame(columns=ACCEPTED_LANG)
 LANGSTATS.index.name = "url"
 
 
-if len(sys.argv) >= 2:
-    call_parameter = sys.argv[1]
-else:
-    call_parameter = None
-
 DEBUG = False
 if len(sys.argv) >= 3 and sys.argv[2] == "DEBUG":
     DEBUG = True
@@ -155,13 +150,10 @@ class GenericScrapySettings(Settings):
             })
 
 
-if call_parameter is None:
-    print("Neither crawl specification file nor json string given. Call scrapy_wrapper.py as follows:\n" +
-               "  python scrapy_wrapper.py <spec_file|spec json string> [DEBUG]")
-    sys.exit(1)
 
+def run_crawl(call_parameter, worker_flag=False):
+    """Run crawl with given parameter."""
 
-if __name__ == '__main__':
     # setup consistent language detection
     DetectorFactory.seed = 0
 
@@ -171,6 +163,10 @@ if __name__ == '__main__':
         # assume the first parameter to be the json string
         crawl_specification = CrawlSpecification()
         crawl_specification.deserialize(call_parameter)
+        # # set finalizer for crawl worker
+        # crawl_specification.finalizers = {
+        # "modules.crawler.scrapy.pipelines.RemoteCrawlFinalizer": {}
+        # }
 
     if not crawl_specification:
         MLOG.error("Crawl settings could not be loaded. Exiting scrapy_wrapper.")
@@ -208,3 +204,20 @@ if __name__ == '__main__':
         if finalizer:
             # somehow pass the collected language statistics from parser
             finalizer(crawl_specification, crawl_specification.finalizers[finalizer_path]).finalize_crawl()
+
+    if worker_flag == True:
+        return True
+
+
+if __name__ == '__main__':
+
+    # get call parameter
+    if len(sys.argv) >= 2:
+        call_parameter = sys.argv[1]
+    else:
+        print("Neither crawl specification file nor json string given. Call scrapy_wrapper.py as follows:\n" +
+                   "  python scrapy_wrapper.py <spec_file|spec json string> [DEBUG]")
+        sys.exit(1)
+
+    # start crawling
+    run_crawl(call_parameter)
