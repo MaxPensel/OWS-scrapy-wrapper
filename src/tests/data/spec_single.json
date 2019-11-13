@@ -1,11 +1,9 @@
 {
     "blacklist": [],
-	  "finalizers": {
-		"scrapy.pipelines.RemoteCrawlFinalizer": {}
-	  },
-    "logs": "logs",
-    "name": "spec_single",
-    "output": "results",
+	  "finalizers": {},
+    "logs": "y",
+    "name": "test",
+    "output": "x",
     "parser": "parsers.ParagraphParser",
     "parser_data": {
         "allowed_languages": [

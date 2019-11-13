@@ -121,9 +121,9 @@ def create_spider(settings, start_url, crawler_name):
         def __init__(self):
             super().__init__()
             # setup individual logger for every spider
-            if crawl_specification.logs:
+            if self.crawl_specification.logs:
                 self.s_log = shared.simple_logger(loger_name="crawlspider",
-                                                  file_path=os.path.join(crawl_specification.logs,
+                                                  file_path=os.path.join(self.crawl_specification.logs,
                                                                          self.name + ".log")
                                                   )
             else:
@@ -163,10 +163,12 @@ def run_crawl(call_parameter, worker_flag=False):
         # assume the first parameter to be the json string
         crawl_specification = CrawlSpecification()
         crawl_specification.deserialize(call_parameter)
-        # # set finalizer for crawl worker
-        # crawl_specification.finalizers = {
-        # "scrapy.pipelines.RemoteCrawlFinalizer": {}
-        # }
+        # set finalizer, output and log for crawl worker
+        crawl_specification.finalizers = {
+            "pipelines.RemoteCrawlFinalizer": {}
+        }
+        crawl_specification.output = "result_data"
+        crawl_specification.logs = "result_logs"
 
     if not crawl_specification:
         MLOG.error("Crawl settings could not be loaded. Exiting scrapy_wrapper.")
