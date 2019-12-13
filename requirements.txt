@@ -15,6 +15,7 @@ numpy==1.17.4
 pandas==0.25.3
 parsel==1.5.2
 pefile==2019.4.18
+pika==1.0.1
 Protego==0.1.15
 pyasn1==0.4.7
 pyasn1-modules==0.2.7
@@ -24,6 +25,7 @@ PyHamcrest==1.9.0
 PyInstaller==3.5
 pyOpenSSL==19.0.0
 python-dateutil==2.8.1
+pytest==4.4.1
 pytz==2019.3
 pywin32-ctypes==0.2.0
 queuelib==1.5.0

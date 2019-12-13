@@ -1,9 +1,11 @@
 {
     "blacklist": [],
-	  "finalizers": {},
-    "logs": "y",
+	  "finalizers": {
+            "pipelines.RemoteCrawlFinalizer": {}
+        },
+    "logs": "result_logs",
     "name": "test",
-    "output": "x",
+    "output": "result_data",
     "parser": "parsers.ParagraphParser",
     "parser_data": {
         "allowed_languages": [

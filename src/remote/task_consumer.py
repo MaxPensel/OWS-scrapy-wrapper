@@ -42,10 +42,3 @@ class TaskConsumer(Consumer):
             # ch.basic_ack(delivery_tag=method.delivery_tag)
             # log.info("Failed processing task")
             raise
-
-
-# Initialize task consumer
-task_consumer = TaskConsumer(config.rmq['host'], config.rmq['port'], config.rmq['heartbeat'],
-                             config.rmq['exchange_name'], config.rmq['exchange_type'],
-                             config.rmq['task_queue'], config.rmq['task_routing_key'],
-                             durable_queue=True)
