@@ -224,6 +224,10 @@ def get_info():
     info["content_pipelines"] = [".".join((cls.__module__, cls.__name__))
                                  for cls in pipelines.ContentPipeline.__subclasses__()]
 
+    import parsers
+    info["parsers"] = [".".join((cls.__module__, cls.__name__))
+                          for cls in parsers.ResponseParser.__subclasses__()]
+
     return info
 
 
