@@ -16,4 +16,5 @@ def send_task(task_data):
                           config.rmq['exchange_type'],
                           config.rmq['task_queue'],
                           config.rmq['task_routing_key'],
-                          json.dumps(task_data))
+                          json.dumps(task_data),
+                          durable_queue=True)

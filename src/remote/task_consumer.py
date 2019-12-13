@@ -10,8 +10,8 @@ class TaskConsumer(Consumer):
     """Consumes crawl tasks."""
 
     def __init__(self, mq_host, mq_port, heartbeat, exchange_name, exchange_type,
-                 task_queue_name, task_routing_key):
-        Consumer.__init__(self, mq_host, mq_port, heartbeat, exchange_name, exchange_type, task_queue_name, task_routing_key)
+                 task_queue_name, task_routing_key, durable_queue=True):
+        Consumer.__init__(self, mq_host, mq_port, heartbeat, exchange_name, exchange_type, task_queue_name, task_routing_key, durable_queue=durable_queue)
 
     def callback(self, ch, method, properties, body):
         """Action performed when recreiving messages."""
@@ -21,6 +21,7 @@ class TaskConsumer(Consumer):
         try:
             # Ignore messages that are redelivered
             if method.redelivered == True:
+                log.info("Task discarded as copy")
                 ch.basic_ack(delivery_tag=method.delivery_tag)
             else:
                 log.info("Start processing task")
@@ -46,4 +47,5 @@ class TaskConsumer(Consumer):
 # Initialize task consumer
 task_consumer = TaskConsumer(config.rmq['host'], config.rmq['port'], config.rmq['heartbeat'],
                              config.rmq['exchange_name'], config.rmq['exchange_type'],
-                             config.rmq['task_queue'], config.rmq['task_routing_key'])
+                             config.rmq['task_queue'], config.rmq['task_routing_key'],
+                             durable_queue=True)
