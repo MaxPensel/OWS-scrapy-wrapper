@@ -165,12 +165,6 @@ def run_crawl(call_parameter, worker_flag=False):
         # assume the first parameter to be the json string
         crawl_specification = CrawlSpecification()
         crawl_specification.deserialize(call_parameter)
-        # set finalizer, output and log for crawl worker
-        crawl_specification.finalizers = {
-            "pipelines.RemoteCrawlFinalizer": {}
-        }
-        crawl_specification.output = "result_data"
-        crawl_specification.logs = "result_logs"
 
     if not crawl_specification:
         MLOG.error("Crawl settings could not be loaded. Exiting scrapy_wrapper.")
