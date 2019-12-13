@@ -56,8 +56,11 @@ if DEBUG:
 else:
     log_level = logging.INFO
 
-MLOG = shared.simple_logger(loger_name="scrapy_wrapper")
+VERSION = "0.2.0"
 
+# Prepare logging, before reading specification only log on console
+MLOG = shared.simple_logger(loger_name="scrapy_wrapper")
+MLOG.info("Running scrapy_wrapper on version {}".format(VERSION))
 
 def load_settings(settings_path) -> CrawlSpecification:
     """
@@ -150,10 +153,9 @@ class GenericScrapySettings(Settings):
             })
 
 
-
 def run_crawl(call_parameter, worker_flag=False):
     """Run crawl with given parameter."""
-
+    global MLOG
     # setup consistent language detection
     DetectorFactory.seed = 0
 
@@ -163,12 +165,6 @@ def run_crawl(call_parameter, worker_flag=False):
         # assume the first parameter to be the json string
         crawl_specification = CrawlSpecification()
         crawl_specification.deserialize(call_parameter)
-        # set finalizer, output and log for crawl worker
-        crawl_specification.finalizers = {
-            "pipelines.RemoteCrawlFinalizer": {}
-        }
-        crawl_specification.output = "result_data"
-        crawl_specification.logs = "result_logs"
 
     if not crawl_specification:
         MLOG.error("Crawl settings could not be loaded. Exiting scrapy_wrapper.")
@@ -211,15 +207,37 @@ def run_crawl(call_parameter, worker_flag=False):
         return True
 
 
+def get_info():
+    """ Compile Info for scrapy_wrapper and its included pipeline options """
+    info = dict()
+    info["version"] = VERSION
+
+    import pipelines  # only locally import when requested
+    info["finalizers"] = [".".join((cls.__module__, cls.__name__))
+                          for cls in pipelines.CrawlFinalizer.__subclasses__()]
+    info["content_pipelines"] = [".".join((cls.__module__, cls.__name__))
+                                 for cls in pipelines.ContentPipeline.__subclasses__()]
+
+    import parsers
+    info["parsers"] = [".".join((cls.__module__, cls.__name__))
+                          for cls in parsers.ResponseParser.__subclasses__()]
+
+    return info
+
+
 if __name__ == '__main__':
 
     # get call parameter
     if len(sys.argv) >= 2:
         call_parameter = sys.argv[1]
     else:
-        print("Neither crawl specification file nor json string given. Call scrapy_wrapper.py as follows:\n" +
-                   "  python scrapy_wrapper.py <spec_file|spec json string> [DEBUG]")
+        print("Neither crawl specification file nor json string given. Call scrapy_wrapper.py as follows:\n"
+              "python scrapy_wrapper.py (<spec_file>|<spec json string>|INFO) [DEBUG]")
         sys.exit(1)
+
+    if call_parameter == "INFO":
+        print(get_info())
+        sys.exit(0)
 
     # start crawling
     run_crawl(call_parameter)

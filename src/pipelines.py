@@ -150,12 +150,15 @@ class RemoteCrawlFinalizer(CrawlFinalizer):
         self.log.info("Done finalizing crawl.")
 
 
-
 ###
 # Pipelines
 ###
 
-class Paragraph2CsvPipeline(object):
+class ContentPipeline:
+    pass
+
+
+class Paragraph2CsvPipeline(ContentPipeline):
 
     INCOMPLETE_FLAG = "-INCOMPLETE"
 
@@ -163,7 +166,7 @@ class Paragraph2CsvPipeline(object):
 
         df_item = dict()
         for key in item:
-            # df_item = {"url": [url], "content": [content]}
+            # df_item = {"url": [url], "content": [content], "origin": [origin], "depth": [depth]}
             df_item[key] = [item[key]]
 
         url = item['url']
@@ -190,7 +193,7 @@ class Paragraph2CsvPipeline(object):
         # initialize necessary csv data file
         fullpath = os.path.join(spider.crawl_specification.output, spider.name + self.INCOMPLETE_FLAG + ".csv")
 
-        df = pandas.DataFrame(columns=["url", "content", "depth"])
+        df = pandas.DataFrame(columns=["url", "content", "par_language", "page_language", "origin", "depth"])
         df.to_csv(fullpath, sep=";", index=False, encoding="utf-8")
 
     def close_spider(self, spider):
