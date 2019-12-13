@@ -150,12 +150,15 @@ class RemoteCrawlFinalizer(CrawlFinalizer):
         self.log.info("Done finalizing crawl.")
 
 
-
 ###
 # Pipelines
 ###
 
-class Paragraph2CsvPipeline(object):
+class ContentPipeline:
+    pass
+
+
+class Paragraph2CsvPipeline(ContentPipeline):
 
     INCOMPLETE_FLAG = "-INCOMPLETE"
 
