@@ -132,6 +132,9 @@ def create_spider(settings, start_url, crawler_name):
             else:
                 self.s_log = shared.simple_logger(loger_name="crawlspider")
 
+            # enter spider to parser
+            self.parser.spider = self
+
             for hand in self.s_log.handlers:
                 self.logger.logger.addHandler(hand)
             self.s_log.info("[__init__] - Crawlspider logger setup finished.")

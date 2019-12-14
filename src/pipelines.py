@@ -172,7 +172,7 @@ class Paragraph2CsvPipeline(ContentPipeline):
         url = item['url']
         domain = urlparse(url).netloc
         if domain in spider.allowed_domains:
-            spider.s_log.info("[process_item] - Adding content for {0} to {1}".format(str(url), str(spider.name)))
+            spider.s_log.debug("[process_item] - Adding content for {0} to {1}".format(str(url), str(spider.name)))
 
             fullpath = os.path.join(spider.crawl_specification.output, spider.name + self.INCOMPLETE_FLAG + ".csv")
 

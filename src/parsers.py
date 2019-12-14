@@ -92,7 +92,9 @@ class ParagraphParser(ResponseParser):
                 par_content = "".join(par.xpath(".//text()").extract())
                 items.extend(self.process_paragraph(response, par_content, origin=xp))
 
-        self.detect_language(items)
+        self.log(logging.INFO, "[parse_html] - Matched {0} paragraphs in {1}".format(len(items), response.url))
+
+        items = self.detect_language(items)
 
         return items
 
@@ -115,7 +117,9 @@ class ParagraphParser(ResponseParser):
         # Cleanup temporary pdf file
         os.unlink(tmp_file.name)
 
-        self.detect_language(items)
+        self.log(logging.INFO, "[parse_pdf] - Matched {0} paragraphs in {1}".format(len(items), response.url))
+
+        items = self.detect_language(items)
 
         return items
 
@@ -134,17 +138,17 @@ class ParagraphParser(ResponseParser):
                                            depth=response.meta["depth"]))
                 self.register_paragraph_language(lang)
             except LangDetectException as exc:
-                # if self.data[ParagraphParser.KEY_KEEP_LANGDETECT_ERRORS]:
-                self.log(logging.WARN, "[process_paragraph] - "
-                                       "{0} on langdetect input '{1}'."
-                                       .format(exc, par_content))
-                items.append(ParagraphItem(url=response.url,
-                                           content=par_content,
-                                           par_lang=exc,
-                                           page_lang=None,
-                                           origin=origin,
-                                           depth=response.meta["depth"]))
-                self.register_paragraph_language(str(exc))
+                if self.data[ParagraphParser.KEY_KEEP_LANGDETECT_ERRORS]:
+                    self.log(logging.WARN, "[process_paragraph] - "
+                                           "{0} on langdetect input '{1}'."
+                                           .format(exc, par_content))
+                    items.append(ParagraphItem(url=response.url,
+                                               content=par_content,
+                                               par_lang=exc,
+                                               page_lang=None,
+                                               origin=origin,
+                                               depth=response.meta["depth"]))
+                    self.register_paragraph_language(str(exc))
 
         return items
 
@@ -155,25 +159,24 @@ class ParagraphParser(ResponseParser):
         all_content = " ".join([item["content"] for item in items])
 
         languages = detect_langs(all_content)
-        for lang in self.data[ParagraphParser.KEY_LANGUAGES]:
-            # accept all paragraphs if there is any chance that their combination matches one of the accepted languages
-            if lang in [l.lang for l in languages]:
+        self.log(logging.INFO,
+                 "[detect_language] - Language distribution on {0} paragraphs: {1}".format(len(items), languages))
+        for lang in languages:
+            # accept all paragraphs if the chance that their combination matches one of the accepted languages
+            # is greater than 0.5
+            if lang.lang in self.data[ParagraphParser.KEY_LANGUAGES] and lang.prob > 0.5:
                 # add page_lang info to each item
                 for item in items:
-                    item["page_lang"] = lang
+                    item["page_lang"] = lang.lang
                 return items
 
         # none of the accepted languages was even remotely present
         return []
 
-
-
-
     def register_paragraph_language(self, lang):
         if lang not in self.detected_languages:
             self.detected_languages[lang] = 0
         self.detected_languages[lang] += 1
-
 
 ###
 # Scrapy item definitions
