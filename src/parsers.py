@@ -97,9 +97,10 @@ class ParagraphParser(ResponseParser):
         return items
 
     def parse_pdf(self, response):
-        tmp_file = tempfile.TemporaryFile(suffix=".pdf", prefix="scrapy_", delete=False)
+        tmp_file = tempfile.NamedTemporaryFile(suffix=".pdf", prefix="scrapy_", delete=False)
         tmp_file.write(response.body)
         tmp_file.close()
+
         try:
             content = textract_pdf.process(tmp_file.name)
         except CommandLineError as exc:  # Catching either ExtensionNotSupported or MissingFileError
