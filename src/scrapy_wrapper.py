@@ -29,6 +29,8 @@ import logging
 import sys
 import os
 
+from scrapy import Request
+
 import shared
 from shared import CrawlSpecification
 
@@ -61,6 +63,8 @@ VERSION = "0.2.0"
 # Prepare logging, before reading specification only log on console
 MLOG = shared.simple_logger(loger_name="scrapy_wrapper")
 MLOG.info("Running scrapy_wrapper on version {}".format(VERSION))
+
+os.chdir(os.path.abspath(os.path.dirname(__file__)))
 
 def load_settings(settings_path) -> CrawlSpecification:
     """
@@ -138,6 +142,10 @@ def create_spider(settings, start_url, crawler_name):
             for hand in self.s_log.handlers:
                 self.logger.logger.addHandler(hand)
             self.s_log.info("[__init__] - Crawlspider logger setup finished.")
+
+        def start_requests(self):
+            for url in self.start_urls:
+                yield Request(url)
 
     return GenericCrawlSpider
 
