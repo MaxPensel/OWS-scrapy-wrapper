@@ -1,0 +1,10 @@
+[rmq]
+  host = "rabbitmq"
+  port = 5672
+  heartbeat = 300
+  exchange_name = "task_exchange"
+  exchange_type = "topic"
+  task_queue = "tasks"
+  result_queue = "results"
+  task_routing_key = "tasks"
+  result_routing_key = "results"

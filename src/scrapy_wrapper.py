@@ -29,8 +29,10 @@ import logging
 import sys
 import os
 
-import common
-from common import CrawlSpecification
+from scrapy import Request
+
+import shared
+from shared import CrawlSpecification
 
 import pandas
 from scrapy.spiders import CrawlSpider, Rule
@@ -47,11 +49,6 @@ LANGSTATS = pandas.DataFrame(columns=ACCEPTED_LANG)
 LANGSTATS.index.name = "url"
 
 
-if len(sys.argv) >= 2:
-    call_parameter = sys.argv[1]
-else:
-    call_parameter = None
-
 DEBUG = False
 if len(sys.argv) >= 3 and sys.argv[2] == "DEBUG":
     DEBUG = True
@@ -61,7 +58,11 @@ if DEBUG:
 else:
     log_level = logging.INFO
 
-MLOG = common.simple_logger(loger_name="scrapy_wrapper")
+VERSION = "0.2.1"
+
+# Prepare logging, before reading specification only log on console
+MLOG = shared.simple_logger(loger_name="scrapy_wrapper")
+MLOG.info("Running scrapy_wrapper on version {}".format(VERSION))
 
 
 def load_settings(settings_path) -> CrawlSpecification:
@@ -92,7 +93,7 @@ def create_spider(settings, start_url, crawler_name):
 
         # load parser from specification
         try:
-            parser_class = common.get_class(crawl_specification.parser)
+            parser_class = shared.get_class(crawl_specification.parser)
             parser = parser_class(data=crawl_specification.parser_data)
         except AttributeError or TypeError as exc:
             MLOG.exception(exc)
@@ -126,17 +127,24 @@ def create_spider(settings, start_url, crawler_name):
         def __init__(self):
             super().__init__()
             # setup individual logger for every spider
-            if crawl_specification.logs:
-                self.s_log = common.simple_logger(loger_name="crawlspider",
-                                                  file_path=os.path.join(crawl_specification.logs,
+            if self.crawl_specification.logs:
+                self.s_log = shared.simple_logger(loger_name="crawlspider",
+                                                  file_path=os.path.join(self.crawl_specification.logs,
                                                                          self.name + ".log")
                                                   )
             else:
-                self.s_log = common.simple_logger(loger_name="crawlspider")
+                self.s_log = shared.simple_logger(loger_name="crawlspider")
+
+            # enter spider to parser
+            self.parser.spider = self
 
             for hand in self.s_log.handlers:
                 self.logger.logger.addHandler(hand)
             self.s_log.info("[__init__] - Crawlspider logger setup finished.")
+
+        def start_requests(self):
+            for url in self.start_urls:
+                yield Request(url)
 
     return GenericCrawlSpider
 
@@ -155,13 +163,9 @@ class GenericScrapySettings(Settings):
             })
 
 
-if call_parameter is None:
-    print("Neither crawl specification file nor json string given. Call scrapy_wrapper.py as follows:\n" +
-               "  python scrapy_wrapper.py <spec_file|spec json string> [DEBUG]")
-    sys.exit(1)
-
-
-if __name__ == '__main__':
+def run_crawl(call_parameter, worker_flag=False):
+    """Run crawl with given parameter."""
+    global MLOG
     # setup consistent language detection
     DetectorFactory.seed = 0
 
@@ -181,7 +185,7 @@ if __name__ == '__main__':
         if not os.path.exists(crawl_specification.logs):
             os.makedirs(crawl_specification.logs, exist_ok=True)
         # reset the master log for the wrapper to include file logging
-        MLOG = common.simple_logger(loger_name="scrapy_wrapper",
+        MLOG = shared.simple_logger(loger_name="scrapy_wrapper",
                                     file_path=os.path.join(crawl_specification.logs, "scrapy_wrapper.log"),
                                     file_level=log_level)
         # specifically assign a log file for scrapy
@@ -194,7 +198,7 @@ if __name__ == '__main__':
     start_urls = list(set(crawl_specification.urls))
     allowed_domains = list(map(lambda x: urlparse(x).netloc, start_urls))
     for url in start_urls:
-        name = common.url2filename(url)
+        name = shared.url2filename(url)
         MLOG.info("Creating spider {0}".format(name))
         process.crawl(create_spider(crawl_specification, url, name))
     try:
@@ -204,7 +208,46 @@ if __name__ == '__main__':
 
     # every spider finished, finalize crawl
     for finalizer_path in crawl_specification.finalizers:
-        finalizer = common.get_class(finalizer_path)
+        finalizer = shared.get_class(finalizer_path)
         if finalizer:
             # somehow pass the collected language statistics from parser
             finalizer(crawl_specification, crawl_specification.finalizers[finalizer_path]).finalize_crawl()
+
+    if worker_flag == True:
+        return True
+
+
+def get_info():
+    """ Compile Info for scrapy_wrapper and its included pipeline options """
+    info = dict()
+    info["version"] = VERSION
+
+    import pipelines  # only locally import when requested
+    info["finalizers"] = [".".join((cls.__module__, cls.__name__))
+                          for cls in pipelines.CrawlFinalizer.__subclasses__()]
+    info["content_pipelines"] = [".".join((cls.__module__, cls.__name__))
+                                 for cls in pipelines.ContentPipeline.__subclasses__()]
+
+    import parsers
+    info["parsers"] = [".".join((cls.__module__, cls.__name__))
+                          for cls in parsers.ResponseParser.__subclasses__()]
+
+    return info
+
+
+if __name__ == '__main__':
+
+    # get call parameter
+    if len(sys.argv) >= 2:
+        call_parameter = sys.argv[1]
+    else:
+        print("Neither crawl specification file nor json string given. Call scrapy_wrapper.py as follows:\n"
+              "python scrapy_wrapper.py (<spec_file>|<spec json string>|INFO) [DEBUG]")
+        sys.exit(1)
+
+    if call_parameter == "INFO":
+        print(get_info())
+        sys.exit(0)
+
+    # start crawling
+    run_crawl(call_parameter)

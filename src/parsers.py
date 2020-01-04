@@ -26,7 +26,7 @@ import os
 import tempfile
 
 import textract_pdf
-from langdetect import detect
+from langdetect import detect, detect_langs
 from langdetect.lang_detect_exception import LangDetectException
 from scrapy import Item, Field
 from textract_pdf.exceptions import CommandLineError
@@ -90,14 +90,19 @@ class ParagraphParser(ResponseParser):
             paragraphs = response.xpath(xp)
             for par in paragraphs:
                 par_content = "".join(par.xpath(".//text()").extract())
-                items.extend(self.process_paragraph(response, par_content))
+                items.extend(self.process_paragraph(response, par_content, origin=xp))
+
+        self.log(logging.INFO, "[parse_html] - Matched {0} paragraphs in {1}".format(len(items), response.url))
+
+        items = self.detect_language(items)
 
         return items
 
     def parse_pdf(self, response):
-        tmp_file = tempfile.TemporaryFile(suffix=".pdf", prefix="scrapy_", delete=False)
+        tmp_file = tempfile.NamedTemporaryFile(suffix=".pdf", prefix="scrapy_", delete=False)
         tmp_file.write(response.body)
         tmp_file.close()
+
         try:
             content = textract_pdf.process(tmp_file.name)
         except CommandLineError as exc:  # Catching either ExtensionNotSupported or MissingFileError
@@ -107,37 +112,76 @@ class ParagraphParser(ResponseParser):
         content = content.decode("utf-8")  # convert byte string to utf-8 string
         items = []
         for par_content in content.splitlines():
-            items.extend(self.process_paragraph(response, par_content))
+            items.extend(self.process_paragraph(response, par_content, origin="pdf"))
 
         # Cleanup temporary pdf file
         os.unlink(tmp_file.name)
 
+        self.log(logging.INFO, "[parse_pdf] - Matched {0} paragraphs in {1}".format(len(items), response.url))
+
+        items = self.detect_language(items)
+
         return items
 
-    def process_paragraph(self, response, par_content):
+    def process_paragraph(self, response, par_content, origin):
         items = []
 
         if par_content.strip():  # immediately ignore empty or only whitespace paragraphs
             try:
                 lang = detect(par_content)
-                if lang in self.data[ParagraphParser.KEY_LANGUAGES]:
-                    items.append(ParagraphItem(url=response.url, content=par_content, depth=response.meta["depth"]))
+                # if "any" or lang in self.data[ParagraphParser.KEY_LANGUAGES]:
+                items.append(ParagraphItem(url=response.url,
+                                           content=par_content,
+                                           par_lang=lang,
+                                           page_lang=None,
+                                           origin=origin,
+                                           depth=response.meta["depth"]))
                 self.register_paragraph_language(lang)
             except LangDetectException as exc:
                 if self.data[ParagraphParser.KEY_KEEP_LANGDETECT_ERRORS]:
                     self.log(logging.WARN, "[process_paragraph] - "
-                                           "{0} on langdetect input '{1}'. You chose to store the content anyway!"
+                                           "{0} on langdetect input '{1}'."
                                            .format(exc, par_content))
-                    items.append(ParagraphItem(url=response.url, content=par_content, depth=response.meta["depth"]))
+                    items.append(ParagraphItem(url=response.url,
+                                               content=par_content,
+                                               par_lang=exc,
+                                               page_lang=None,
+                                               origin=origin,
+                                               depth=response.meta["depth"]))
                     self.register_paragraph_language(str(exc))
 
         return items
+
+    def detect_language(self, items):
+        if "any" in self.data[ParagraphParser.KEY_LANGUAGES]:
+            return items
+
+        all_content = " ".join([item["content"] for item in items])
+        try:
+            languages = detect_langs(all_content)
+            self.log(logging.INFO,
+                     "[detect_language] - Language distribution on {0} paragraphs: {1}".format(len(items), languages))
+            for lang in languages:
+                # accept all paragraphs if the chance that their combination matches one of the accepted languages
+                # is greater than 0.5
+                if lang.lang in self.data[ParagraphParser.KEY_LANGUAGES] and lang.prob > 0.5:
+                    # add page_lang info to each item
+                    for item in items:
+                        item["page_lang"] = lang.lang
+                    return items
+        except LangDetectException as exc:
+            if self.data[ParagraphParser.KEY_KEEP_LANGDETECT_ERRORS]:
+                self.log(logging.WARN, "[process_paragraph] - {0} on langdetect input '{1}'.")
+                return items
+
+
+        # none of the accepted languages was even remotely present
+        return []
 
     def register_paragraph_language(self, lang):
         if lang not in self.detected_languages:
             self.detected_languages[lang] = 0
         self.detected_languages[lang] += 1
-
 
 ###
 # Scrapy item definitions
@@ -146,6 +190,9 @@ class ParagraphParser(ResponseParser):
 class ParagraphItem(Item):
     url = Field()
     content = Field()
+    par_lang = Field()
+    page_lang = Field()
+    origin = Field()
     depth = Field()
 
 
