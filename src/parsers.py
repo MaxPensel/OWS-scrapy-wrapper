@@ -157,18 +157,23 @@ class ParagraphParser(ResponseParser):
             return items
 
         all_content = " ".join([item["content"] for item in items])
-
-        languages = detect_langs(all_content)
-        self.log(logging.INFO,
-                 "[detect_language] - Language distribution on {0} paragraphs: {1}".format(len(items), languages))
-        for lang in languages:
-            # accept all paragraphs if the chance that their combination matches one of the accepted languages
-            # is greater than 0.5
-            if lang.lang in self.data[ParagraphParser.KEY_LANGUAGES] and lang.prob > 0.5:
-                # add page_lang info to each item
-                for item in items:
-                    item["page_lang"] = lang.lang
+        try:
+            languages = detect_langs(all_content)
+            self.log(logging.INFO,
+                     "[detect_language] - Language distribution on {0} paragraphs: {1}".format(len(items), languages))
+            for lang in languages:
+                # accept all paragraphs if the chance that their combination matches one of the accepted languages
+                # is greater than 0.5
+                if lang.lang in self.data[ParagraphParser.KEY_LANGUAGES] and lang.prob > 0.5:
+                    # add page_lang info to each item
+                    for item in items:
+                        item["page_lang"] = lang.lang
+                    return items
+        except LangDetectException as exc:
+            if self.data[ParagraphParser.KEY_KEEP_LANGDETECT_ERRORS]:
+                self.log(logging.WARN, "[process_paragraph] - {0} on langdetect input '{1}'.")
                 return items
+
 
         # none of the accepted languages was even remotely present
         return []
