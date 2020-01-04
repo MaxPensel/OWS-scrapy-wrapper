@@ -56,5 +56,5 @@ def create_config(config_path, config_file):
     return config
 
 
-config = create_config('common', 'config.toml')
+config = create_config(os.path.abspath(os.path.dirname(__file__)), 'config.toml')
 log.info("Configuration successfully created.")

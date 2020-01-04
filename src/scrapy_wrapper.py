@@ -64,7 +64,6 @@ VERSION = "0.2.0"
 MLOG = shared.simple_logger(loger_name="scrapy_wrapper")
 MLOG.info("Running scrapy_wrapper on version {}".format(VERSION))
 
-os.chdir(os.path.abspath(os.path.dirname(__file__)))
 
 def load_settings(settings_path) -> CrawlSpecification:
     """

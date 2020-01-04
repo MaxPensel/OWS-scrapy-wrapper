@@ -25,11 +25,13 @@ import os
 import shutil
 from urllib.parse import urlparse
 
+import math
+import numpy as np
 import pandas
+
 import shared
 from shared import CrawlSpecification
 
-from remote.result_producer import send_result
 ###
 # Crawl Finalizers
 ###
@@ -54,6 +56,8 @@ class RemoteCrawlFinalizer(CrawlFinalizer):
     def finalize_crawl(self, data: {} = None):
         """This method is automatically called after the entire crawl has finished, gather the crawl results from
         the workspace (using filemanager) and compose an http request for further processing"""
+
+        from remote.result_producer import send_result
 
         self.log.info("Finalizing crawl ...")
 
