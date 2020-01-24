@@ -25,6 +25,9 @@ import os
 import shutil
 from urllib.parse import urlparse
 
+import string
+import re
+
 import math
 import numpy as np
 import pandas
@@ -62,7 +65,8 @@ class RemoteCrawlFinalizer(CrawlFinalizer):
         self.log.info("Finalizing crawl ...")
 
         # maximum size for message chunk (100 MB)
-        max_message_size = 104857600
+        # max_message_size = 104857600 # 100 MB
+        max_message_size = 10485760 # 100 MB
 
         if data is None:
             data = dict()
@@ -82,6 +86,12 @@ class RemoteCrawlFinalizer(CrawlFinalizer):
 
             # read df
             df = pandas.read_csv(csv_filepath, sep=';', quotechar='"', encoding="utf-8")
+
+            # # clean df
+            # df['content'] = df['content'].apply(clean_text)
+            # df = df.sort_values('url', ascending=False)
+            # df = df.drop_duplicates(subset='content', keep='first')
+
             # self.log.info(df)
             # get filesize to estimate number of required messages
             result_size = os.path.getsize(csv_filepath)
@@ -97,7 +107,7 @@ class RemoteCrawlFinalizer(CrawlFinalizer):
                 # send all chunks to queue
                 for index, chunk in enumerate(chunks):
                     #self.log.info(chunk)
-                    filename_part = "{}_part{}".format(filename, index)
+                    filename_part = "{}_part{}_{}".format(filename, index, chunk_count)
                     data['filename'] = filename_part
                     data['data'] = chunk.to_csv(index=False, sep=';')
                     #self.log.info(data['data'])
@@ -208,3 +218,21 @@ class Paragraph2CsvPipeline(ContentPipeline):
         fullpath_com = os.path.join(spider.crawl_specification.output, spider.name + ".csv")
 
         shutil.move(fullpath_inc, fullpath_com)
+
+
+
+def clean_text(text):
+    """Transform and remove characteres from text."""
+
+    text = str(text)
+    # remove punctuation
+    text = text.translate(str.maketrans(' ', ' ', string.punctuation))
+    # remove special characters
+    text = re.sub('[^A-Za-z0-9 ]+', ' ', text)
+    # remove line breaks
+    text = text.replace("\n","")
+    # remove multiple spaces
+    text = re.sub('\s+', ' ', text).strip()
+    # all lower case
+    text = text.lower()
+    return text

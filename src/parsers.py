@@ -31,6 +31,11 @@ from langdetect.lang_detect_exception import LangDetectException
 from scrapy import Item, Field
 from textract_pdf.exceptions import CommandLineError
 
+import html2text
+html_converter = html2text.HTML2Text()
+html_converter.ignore_links = True
+html_converter.ignore_images = True
+
 
 class ResponseParser:
 
@@ -84,12 +89,36 @@ class ParagraphParser(ResponseParser):
         self.detected_languages = dict()
 
     def parse_html(self, response):
+
+        global html_converter
         items = []
 
         for xp in self.data[ParagraphParser.KEY_XPATHS]:
-            paragraphs = response.xpath(xp)
+
+            # remove all unwanted tags from selected tree
+            blacklist = ['header', 'footer', 'nav']
+            blacklist_content = []
+            for tag in blacklist:
+                for node in response.xpath("{}//{}".format(xp, tag)):
+                    blacklist_content.append(node.getall())
+                    #node.getparent().remove(node)
+
+            remove_list =  []
+            for bad_content_list in blacklist_content:
+                    for bad_content in bad_content_list:
+                        remove_list.append(bad_content)
+
+            paragraphs_raw = response.xpath(xp).extract()
+            paragraphs = []
+
+            for paragraph in paragraphs_raw:
+                for text in remove_list:
+                    paragraph = paragraph.replace(text, "")
+                paragraphs.append(paragraph)
+
             for par in paragraphs:
-                par_content = "".join(par.xpath(".//text()").extract())
+                # convert paragraph to text
+                par_content = html_converter.handle(par)
                 items.extend(self.process_paragraph(response, par_content, origin=xp))
 
         self.log(logging.INFO, "[parse_html] - Matched {0} paragraphs in {1}".format(len(items), response.url))
@@ -128,7 +157,13 @@ class ParagraphParser(ResponseParser):
 
         if par_content.strip():  # immediately ignore empty or only whitespace paragraphs
             try:
-                lang = detect(par_content)
+                lang = "any"
+                # # only detect if necessary
+                # if "any" in self.data[ParagraphParser.KEY_LANGUAGES]:
+                #     lang = "any"
+                # else:
+                #     lang = detect(par_content)
+
                 # if "any" or lang in self.data[ParagraphParser.KEY_LANGUAGES]:
                 items.append(ParagraphItem(url=response.url,
                                            content=par_content,
@@ -153,30 +188,31 @@ class ParagraphParser(ResponseParser):
         return items
 
     def detect_language(self, items):
-        if "any" in self.data[ParagraphParser.KEY_LANGUAGES]:
-            return items
-
-        all_content = " ".join([item["content"] for item in items])
-        try:
-            languages = detect_langs(all_content)
-            self.log(logging.INFO,
-                     "[detect_language] - Language distribution on {0} paragraphs: {1}".format(len(items), languages))
-            for lang in languages:
-                # accept all paragraphs if the chance that their combination matches one of the accepted languages
-                # is greater than 0.5
-                if lang.lang in self.data[ParagraphParser.KEY_LANGUAGES] and lang.prob > 0.5:
-                    # add page_lang info to each item
-                    for item in items:
-                        item["page_lang"] = lang.lang
-                    return items
-        except LangDetectException as exc:
-            if self.data[ParagraphParser.KEY_KEEP_LANGDETECT_ERRORS]:
-                self.log(logging.WARN, "[process_paragraph] - {0} on langdetect input '{1}'.")
-                return items
-
-
-        # none of the accepted languages was even remotely present
-        return []
+        return items
+        # if "any" in self.data[ParagraphParser.KEY_LANGUAGES]:
+        #     return items
+        #
+        # all_content = " ".join([item["content"] for item in items])
+        # try:
+        #     languages = detect_langs(all_content)
+        #     self.log(logging.INFO,
+        #              "[detect_language] - Language distribution on {0} paragraphs: {1}".format(len(items), languages))
+        #     for lang in languages:
+        #         # accept all paragraphs if the chance that their combination matches one of the accepted languages
+        #         # is greater than 0.5
+        #         if lang.lang in self.data[ParagraphParser.KEY_LANGUAGES] and lang.prob > 0.5:
+        #             # add page_lang info to each item
+        #             for item in items:
+        #                 item["page_lang"] = lang.lang
+        #             return items
+        # except LangDetectException as exc:
+        #     if self.data[ParagraphParser.KEY_KEEP_LANGDETECT_ERRORS]:
+        #         self.log(logging.WARN, "[process_paragraph] - {0} on langdetect input '{1}'.")
+        #         return items
+        #
+        #
+        # # none of the accepted languages was even remotely present
+        # return []
 
     def register_paragraph_language(self, lang):
         if lang not in self.detected_languages:
