@@ -57,6 +57,10 @@ class ResponseParser:
         else:
             print("[{0}] {1}".format(level, message))
 
+    @staticmethod
+    def generate_example_data():
+        return {"<Data Key>": "<Data Value>"}
+
 
 class ParagraphParser(ResponseParser):
 
@@ -182,6 +186,12 @@ class ParagraphParser(ResponseParser):
         if lang not in self.detected_languages:
             self.detected_languages[lang] = 0
         self.detected_languages[lang] += 1
+
+    @staticmethod
+    def generate_example_data():
+        return {ParagraphParser.KEY_LANGUAGES: ["de", "en", "any"],
+                ParagraphParser.KEY_KEEP_LANGDETECT_ERRORS: True,
+                ParagraphParser.KEY_XPATHS: ["//p", "//h1", "//h2"]}
 
 ###
 # Scrapy item definitions
