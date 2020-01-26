@@ -115,7 +115,7 @@ def create_spider(settings, start_url, crawler_name):
 
         rules = [
             Rule(LxmlLinkExtractor(deny=crawl_specification.blacklist,
-                                   allow=start_url+".*",  # crawl only links behind the given start-url
+                                   allow=crawl_specification.whitelist,  # crawl only links behind the given start-url
                                    deny_extensions=denied_extensions),
                  callback=parser.parse,
                  follow=True)
