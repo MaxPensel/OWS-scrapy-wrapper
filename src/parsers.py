@@ -26,6 +26,7 @@ import os
 import tempfile
 
 import textract_pdf
+import pipelines
 from langdetect import detect, detect_langs
 from langdetect.lang_detect_exception import LangDetectException
 from scrapy import Item, Field
@@ -33,6 +34,8 @@ from textract_pdf.exceptions import CommandLineError
 
 
 class ResponseParser:
+
+    ACCEPTED_PIPELINES = []
 
     def __init__(self, callbacks=None, data: {} = None, spider=None):
         if callbacks is None:
@@ -63,6 +66,8 @@ class ResponseParser:
 
 
 class ParagraphParser(ResponseParser):
+
+    ACCEPTED_PIPELINES = [pipelines.Paragraph2CsvPipeline]
 
     KEY_KEEP_LANGDETECT_ERRORS = "keep_langdetect_errors"
     KEY_LANGUAGES = "allowed_languages"
@@ -210,6 +215,8 @@ class ParagraphParser(ResponseParser):
 
 
 class RawParser(ResponseParser):
+
+    ACCEPTED_PIPELINES = [pipelines.Raw2FilePipeline]
 
     KEY_ALLOWED_CONTENT_TYPES = "allowed_content_type"
 
