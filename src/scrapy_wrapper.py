@@ -58,7 +58,7 @@ if DEBUG:
 else:
     log_level = logging.INFO
 
-VERSION = "0.2.1"
+VERSION = "0.3.0"
 
 # Prepare logging, before reading specification only log on console
 MLOG = shared.simple_logger(loger_name="scrapy_wrapper")
@@ -115,7 +115,7 @@ def create_spider(settings, start_url, crawler_name):
 
         rules = [
             Rule(LxmlLinkExtractor(deny=crawl_specification.blacklist,
-                                   allow=start_url+".*",  # crawl only links behind the given start-url
+                                   allow=crawl_specification.whitelist,  # crawl only links behind the given start-url
                                    deny_extensions=denied_extensions),
                  callback=parser.parse,
                  follow=True)
@@ -229,11 +229,31 @@ def get_info():
                                  for cls in pipelines.ContentPipeline.__subclasses__()]
 
     import parsers
-    info["parsers"] = [".".join((cls.__module__, cls.__name__))
-                          for cls in parsers.ResponseParser.__subclasses__()]
+    info["parsers"] = {".".join((cls.__module__, cls.__name__)): cls.ACCEPTED_PIPELINES
+                       for cls in parsers.ResponseParser.__subclasses__()}
 
     return info
 
+
+def generate_template_specification(parser_class=None):
+    p_class = "<Parser Class>"
+    p_data = "<Parser Data Dictionary>"
+    if parser_class:
+        p_class = str(parser_class.__module__ + "." + parser_class.__qualname__)
+        if hasattr(parser_class, "generate_example_data"):
+            p_data = parser_class.generate_example_data()
+
+    spec = CrawlSpecification(name="<Crawl Name>",
+                              output="<Output Directory>",
+                              logs="<Log Directory>",
+                              urls=["<start_url1>", "<start_url2>"],
+                              blacklist=["<blacklist regex 1>", "<blacklist regex 2>"],
+                              whitelist=["<whitelist regex 1>", "<whitelist regex 2>"],
+                              parser=p_class,
+                              parser_data=p_data,
+                              pipelines={"<Pipeline Class>": 300},
+                              finalizers={"<Finalizer Class>": "<Finalizer Data Dictionary>"})
+    return spec
 
 if __name__ == '__main__':
 

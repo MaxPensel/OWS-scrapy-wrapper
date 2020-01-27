@@ -36,6 +36,7 @@ class CrawlSpecification:
                  logs: str = None,
                  urls: [str] = None,
                  blacklist: [str] = None,
+                 whitelist: [str] = None,
                  parser: str = None,
                  parser_data: {} = None,
                  pipelines: {} = None,
@@ -52,6 +53,10 @@ class CrawlSpecification:
         if blacklist is None:
             blacklist = list()
         self.blacklist = blacklist
+
+        if whitelist is None:
+            whitelist = list()
+        self.whitelist = whitelist
 
         self.parser = parser
 
@@ -73,6 +78,7 @@ class CrawlSpecification:
                logs: str = None,
                urls: [str] = None,
                blacklist: [str] = None,
+               whitelist: [str] = None,
                parser: str = None,
                parser_data: {} = None,
                pipelines: {} = None,
@@ -87,6 +93,8 @@ class CrawlSpecification:
             self.urls = urls
         if blacklist:
             self.blacklist = blacklist
+        if whitelist:
+            self.whitelist = whitelist
         if parser:
             self.parser = parser
         if parser_data:

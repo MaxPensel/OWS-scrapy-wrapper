@@ -159,7 +159,12 @@ class RemoteCrawlFinalizer(CrawlFinalizer):
 ###
 
 class ContentPipeline:
-    pass
+
+    def open_spider(self, spider):
+        spider.s_log.info(f" vvvvvvvvvvvvvvvvvvvvvvvvvvvv OPENING SPIDER {spider.name} vvvvvvvvvvvvvvvvvvvvvvvvvvvv")
+
+    def close_spider(self, spider):
+        spider.s_log.info(f" ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ CLOSING SPIDER {spider.name} ^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
 
 
 class Paragraph2CsvPipeline(ContentPipeline):
@@ -188,8 +193,7 @@ class Paragraph2CsvPipeline(ContentPipeline):
         return item
 
     def open_spider(self, spider):
-        spider.s_log.info(" vvvvvvvvvvvvvvvvvvvvvvvvvvvv OPENING SPIDER {0} vvvvvvvvvvvvvvvvvvvvvvvvvvvv"
-                          .format(spider.name))
+        super().open_spider(spider)
         # make sure output directory exists
         if not os.path.exists(spider.crawl_specification.output):
             os.makedirs(spider.crawl_specification.output, exist_ok=True)
@@ -201,10 +205,40 @@ class Paragraph2CsvPipeline(ContentPipeline):
         df.to_csv(fullpath, sep=";", index=False, encoding="utf-8")
 
     def close_spider(self, spider):
-        spider.s_log.info(" ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ CLOSING SPIDER {0} ^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
-                          .format(spider.name))
+        super().close_spider(spider)
 
         fullpath_inc = os.path.join(spider.crawl_specification.output, spider.name + self.INCOMPLETE_FLAG + ".csv")
         fullpath_com = os.path.join(spider.crawl_specification.output, spider.name + ".csv")
 
         shutil.move(fullpath_inc, fullpath_com)
+
+
+class Raw2FilePipeline(ContentPipeline):
+
+    def process_item(self, item, spider):
+        url = item["url"]
+        content = item["content"]
+        p_url = urlparse(url)
+        domain = p_url.netloc
+        if domain in spider.allowed_domains:
+            spider.s_log.debug(f"[process_item] - Adding content for {url} to {spider.name}")
+
+            domain_data_dir = os.path.join(spider.crawl_specification.output, spider.name)
+
+            # careful, csv file may not exist for some reason (moved, deleted, ..)
+            if not os.path.exists(domain_data_dir):
+                os.makedirs(domain_data_dir, exist_ok=True)
+
+            if "." in p_url.path.split("/")[-1]:
+                filename = shared.url2filename(p_url.path)
+            else:
+                sep = ""
+                if not p_url.path.endswith("/"):
+                    sep = "/"
+
+                filename = shared.url2filename(p_url.path + sep + "index.html")
+            mode = "w" if type(content) == str else "wb"
+            with open(os.path.join(domain_data_dir, filename), mode) as file:
+                file.write(content)
+
+        return item
