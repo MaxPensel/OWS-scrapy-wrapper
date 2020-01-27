@@ -149,17 +149,16 @@ class ParagraphParser(ResponseParser):
                                            depth=response.meta["depth"]))
                 self.register_paragraph_language(lang)
             except LangDetectException as exc:
-                if self.data[ParagraphParser.KEY_KEEP_LANGDETECT_ERRORS]:
-                    self.log(logging.WARN, "[process_paragraph] - "
-                                           "{0} on langdetect input '{1}'."
-                                           .format(exc, par_content))
-                    items.append(ParagraphItem(url=response.url,
-                                               content=par_content,
-                                               par_lang=exc,
-                                               page_lang=None,
-                                               origin=origin,
-                                               depth=response.meta["depth"]))
-                    self.register_paragraph_language(str(exc))
+                self.log(logging.WARN, "[process_paragraph] - "
+                                       "{0} on langdetect input '{1}'."
+                                       .format(exc, par_content))
+                items.append(ParagraphItem(url=response.url,
+                                           content=par_content,
+                                           par_lang=exc,
+                                           page_lang=None,
+                                           origin=origin,
+                                           depth=response.meta["depth"]))
+                self.register_paragraph_language(str(exc))
 
         return items
 
