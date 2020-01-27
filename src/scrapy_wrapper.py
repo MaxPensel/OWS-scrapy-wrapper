@@ -58,7 +58,7 @@ if DEBUG:
 else:
     log_level = logging.INFO
 
-VERSION = "0.2.1"
+VERSION = "0.3.0"
 
 # Prepare logging, before reading specification only log on console
 MLOG = shared.simple_logger(loger_name="scrapy_wrapper")
@@ -231,7 +231,7 @@ def get_info():
     import parsers
     info["parsers"] = {".".join((cls.__module__, cls.__name__)): cls.ACCEPTED_PIPELINES
                        for cls in parsers.ResponseParser.__subclasses__()}
-    
+
     return info
 
 
