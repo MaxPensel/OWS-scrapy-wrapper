@@ -1,16 +1,14 @@
 {
     "blacklist": [],
-	  "finalizers": {
-            "pipelines.RemoteCrawlFinalizer": {}
-        },
-    "logs": "result_logs",
+    "whitelist": [],
+	"finalizers": {},
+    "logs": "tests/results/local_par_logs",
     "name": "test",
-    "output": "result_data",
+    "output": "tests/results/local_par_data",
     "parser": "parsers.ParagraphParser",
     "parser_data": {
         "allowed_languages": [
-            "de",
-            "en"
+            "any"
         ],
         "keep_langdetect_errors": false,
         "xpaths": [

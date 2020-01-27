@@ -1,14 +1,16 @@
 {
     "blacklist": [],
-    "whitelist": [],
-	"finalizers": {},
-    "logs": "tests/data/result/logs",
+	  "finalizers": {
+            "pipelines.RemoteCrawlFinalizer": {}
+        },
+    "logs": "tests/results/remote_logs",
     "name": "test",
-    "output": "tests/data/result/data",
-    "parser": "parsers.RawParser",
+    "output": "tests/results/remote_data",
+    "parser": "parsers.ParagraphParser",
     "parser_data": {
         "allowed_languages": [
-            "any"
+            "de",
+            "en"
         ],
         "keep_langdetect_errors": false,
         "xpaths": [
@@ -17,7 +19,7 @@
         ]
     },
     "pipelines": {
-        "pipelines.Raw2FilePipeline": 300
+        "pipelines.Paragraph2CsvPipeline": 300
     },
     "urls": [
         "https://crawlme.maxpensel.de"
