@@ -244,6 +244,10 @@ class RawParser(ResponseParser):
 
         return [RawContentItem(url=response.url, content=cont, depth=response.meta["depth"])]
 
+    @staticmethod
+    def generate_example_data():
+        return {RawParser.KEY_ALLOWED_CONTENT_TYPES: RawParser.DEFAULT_ALLOWED_CONTENT_TYPES}
+
 
 ###
 # Scrapy item definitions
