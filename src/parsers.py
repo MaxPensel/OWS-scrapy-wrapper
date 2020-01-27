@@ -71,6 +71,9 @@ class ParagraphParser(ResponseParser):
     DEFAULT_ALLOWED_LANGUAGES = ["de", "en"]
     DEFAULT_XPATHS = ["//p", "//td"]
 
+    V_DISABLED = "disabled"
+    V_ANY = "any"
+
     def __init__(self, data: {} = None, spider=None):
         super().__init__(data=data, spider=spider)
 
@@ -128,11 +131,15 @@ class ParagraphParser(ResponseParser):
         return items
 
     def process_paragraph(self, response, par_content, origin):
+        """ Supplement paragraph data with detected language, supplement with 'None' if disabled """
         items = []
 
         if par_content.strip():  # immediately ignore empty or only whitespace paragraphs
             try:
-                lang = detect(par_content)
+                if ParagraphParser.V_DISABLED in self.data[ParagraphParser.KEY_LANGUAGES]:
+                    lang = None
+                else:
+                    lang = detect(par_content)
                 # if "any" or lang in self.data[ParagraphParser.KEY_LANGUAGES]:
                 items.append(ParagraphItem(url=response.url,
                                            content=par_content,
@@ -157,7 +164,8 @@ class ParagraphParser(ResponseParser):
         return items
 
     def detect_language(self, items):
-        if "any" in self.data[ParagraphParser.KEY_LANGUAGES]:
+        """ Filter out all items of a response depending on their detected language, don't filter if disabled """
+        if ParagraphParser.V_DISABLED in self.data[ParagraphParser.KEY_LANGUAGES]:
             return items
 
         all_content = " ".join([item["content"] for item in items])
@@ -165,14 +173,21 @@ class ParagraphParser(ResponseParser):
             languages = detect_langs(all_content)
             self.log(logging.INFO,
                      "[detect_language] - Language distribution on {0} paragraphs: {1}".format(len(items), languages))
-            for lang in languages:
+
+            if ParagraphParser.V_ANY in self.data[ParagraphParser.KEY_LANGUAGES]:
+                # if "any" language is accepted, store page language probabilities
+                for item in items:
+                    item["page_lang"] = str(languages)
+                return items
+            else:
                 # accept all paragraphs if the chance that their combination matches one of the accepted languages
                 # is greater than 0.5
-                if lang.lang in self.data[ParagraphParser.KEY_LANGUAGES] and lang.prob > 0.5:
-                    # add page_lang info to each item
-                    for item in items:
-                        item["page_lang"] = lang.lang
-                    return items
+                for lang in languages:
+                    if lang.lang in self.data[ParagraphParser.KEY_LANGUAGES] and lang.prob > 0.5:
+                        # add page_lang info to each item
+                        for item in items:
+                            item["page_lang"] = lang.lang
+                        return items
         except LangDetectException as exc:
             if self.data[ParagraphParser.KEY_KEEP_LANGDETECT_ERRORS]:
                 self.log(logging.WARN, "[process_paragraph] - {0} on langdetect input '{1}'.")
@@ -183,15 +198,46 @@ class ParagraphParser(ResponseParser):
         return []
 
     def register_paragraph_language(self, lang):
+        """ Keep track of discovered languages (deprecated) """
         if lang not in self.detected_languages:
             self.detected_languages[lang] = 0
         self.detected_languages[lang] += 1
 
     @staticmethod
     def generate_example_data():
-        return {ParagraphParser.KEY_LANGUAGES: ["de", "en", "any"],
-                ParagraphParser.KEY_KEEP_LANGDETECT_ERRORS: True,
+        return {ParagraphParser.KEY_LANGUAGES: ["de", "en", "any", "disabled"],
+                ParagraphParser.KEY_KEEP_LANGDETECT_ERRORS: False,
                 ParagraphParser.KEY_XPATHS: ["//p", "//h1", "//h2"]}
+
+
+class RawParser(ResponseParser):
+
+    KEY_ALLOWED_CONTENT_TYPES = "allowed_content_type"
+
+    DEFAULT_ALLOWED_CONTENT_TYPES = ["text/html", "application/pdf"]
+
+    def __init__(self, data: {} = None, spider=None):
+        super().__init__(data=data, spider=spider)
+
+        # set defaults
+        if RawParser.KEY_ALLOWED_CONTENT_TYPES not in self.data:
+            self.data[RawParser.KEY_ALLOWED_CONTENT_TYPES] = RawParser.DEFAULT_ALLOWED_CONTENT_TYPES
+
+        for ct in self.data[RawParser.KEY_ALLOWED_CONTENT_TYPES]:
+            self.callbacks[ct] = self.parse_response
+
+    def parse_response(self, response):
+        if hasattr(response, 'text'):
+            cont = response.text
+            log_note = "as text"
+        else:
+            cont = response.body
+            log_note = "as bytes"
+
+        self.log(logging.INFO, f"Storing response {response} {log_note}")
+
+        return [RawContentItem(url=response.url, content=cont, depth=response.meta["depth"])]
+
 
 ###
 # Scrapy item definitions

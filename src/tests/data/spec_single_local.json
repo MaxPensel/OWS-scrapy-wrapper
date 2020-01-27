@@ -2,10 +2,10 @@
     "blacklist": [],
     "whitelist": [],
 	"finalizers": {},
-    "logs": "result_logs",
+    "logs": "tests/data/result/logs",
     "name": "test",
-    "output": "result_data",
-    "parser": "parsers.ParagraphParser",
+    "output": "tests/data/result/data",
+    "parser": "parsers.RawParser",
     "parser_data": {
         "allowed_languages": [
             "any"
@@ -17,7 +17,7 @@
         ]
     },
     "pipelines": {
-        "pipelines.Paragraph2CsvPipeline": 300
+        "pipelines.Raw2FilePipeline": 300
     },
     "urls": [
         "https://crawlme.maxpensel.de"
