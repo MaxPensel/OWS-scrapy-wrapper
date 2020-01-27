@@ -115,27 +115,6 @@ class CrawlSpecification:
         for key in data:
             setattr(self, key, data[key])
 
-    @staticmethod
-    def generate_example(parser_class=None):
-        p_class = "<Parser Class>"
-        p_data = "<Parser Data Dictionary>"
-        if parser_class:
-            p_class = str(parser_class.__module__ + "." + parser_class.__qualname__)
-            if hasattr(parser_class, "generate_example_data"):
-                p_data = parser_class.generate_example_data()
-
-        spec = CrawlSpecification(name="<Crawl Name>",
-                                  output="<Output Directory>",
-                                  logs="<Log Directory>",
-                                  urls=["<start_url1>", "<start_url2>"],
-                                  blacklist=["<blacklist regex 1>", "<blacklist regex 2>"],
-                                  whitelist=["<whitelist regex 1>", "<whitelist regex 2>"],
-                                  parser=p_class,
-                                  parser_data=p_data,
-                                  pipelines={"<Pipeline Class>": 300},
-                                  finalizers={"<Finalizer Class>": "<Finalizer Data Dictionary>"})
-        return spec
-
 
 def url2filename(url):
     return (urlparse(url).netloc + urlparse(url).path).replace("/", "_")
