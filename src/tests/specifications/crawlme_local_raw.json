@@ -1,0 +1,25 @@
+{
+    "blacklist": [],
+    "whitelist": [],
+	"finalizers": {},
+    "logs": "tests/results/local_raw_logs",
+    "name": "test",
+    "output": "tests/results/local_raw_data",
+    "parser": "parsers.RawParser",
+    "parser_data": {
+        "allowed_languages": [
+            "any"
+        ],
+        "keep_langdetect_errors": false,
+        "xpaths": [
+            "//p",
+            "//td"
+        ]
+    },
+    "pipelines": {
+        "pipelines.Raw2FilePipeline": 300
+    },
+    "urls": [
+        "https://crawlme.maxpensel.de"
+    ]
+}
