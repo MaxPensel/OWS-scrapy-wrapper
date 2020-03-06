@@ -119,6 +119,8 @@ class ParagraphParser(ResponseParser):
             content = textract_pdf.process(tmp_file.name)
         except CommandLineError as exc:  # Catching either ExtensionNotSupported or MissingFileError
             self.log(logging.ERROR, "[parse_pdf] - {0}: {1}".format(type(exc).__name__, exc))
+            # Cleanup temporary pdf file
+            os.unlink(tmp_file.name)
             return []  # In any case, text extraction failed so no items were parsed
 
         content = content.decode("utf-8")  # convert byte string to utf-8 string
