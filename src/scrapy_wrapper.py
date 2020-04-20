@@ -25,6 +25,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with OWS-scrapy-wrapper.  If not, see <https://www.gnu.org/licenses/>.
 """
+import json
 import logging
 import sys
 import os
@@ -229,7 +230,8 @@ def get_info():
                                  for cls in pipelines.ContentPipeline.__subclasses__()]
 
     import parsers
-    info["parsers"] = {".".join((cls.__module__, cls.__name__)): cls.ACCEPTED_PIPELINES
+    info["parsers"] = {".".join((cls.__module__, cls.__name__)):
+                           [".".join((ppl.__module__, ppl.__name__)) for ppl in cls.ACCEPTED_PIPELINES]
                        for cls in parsers.ResponseParser.__subclasses__()}
 
     return info
@@ -255,6 +257,7 @@ def generate_template_specification(parser_class=None):
                               finalizers={"<Finalizer Class>": "<Finalizer Data Dictionary>"})
     return spec
 
+
 if __name__ == '__main__':
 
     # get call parameter
@@ -266,7 +269,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     if call_parameter == "INFO":
-        print(get_info())
+        print(json.dumps(get_info()))
         sys.exit(0)
 
     # start crawling
