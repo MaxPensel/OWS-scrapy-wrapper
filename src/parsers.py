@@ -209,6 +209,9 @@ class ParagraphParser(ResponseParser):
             self.detected_languages[lang] = 0
         self.detected_languages[lang] += 1
 
+    def errback(self, failure):
+        self.log(logging.WARN, f"Rule failure on {failure.request.url}: {failure.value}")
+
     @staticmethod
     def generate_example_data():
         return {ParagraphParser.KEY_LANGUAGES: ["de", "en", "any", "disabled"],
