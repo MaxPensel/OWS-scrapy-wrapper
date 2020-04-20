@@ -25,6 +25,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with OWS-scrapy-wrapper.  If not, see <https://www.gnu.org/licenses/>.
 """
+import json
 import logging
 import sys
 import os
@@ -40,6 +41,7 @@ from scrapy.linkextractors.lxmlhtml import LxmlLinkExtractor
 from scrapy.crawler import CrawlerProcess
 from urllib.parse import urlparse
 from scrapy.settings import Settings
+from scrapy.utils.url import url_is_from_any_domain, url_has_any_extension
 from langdetect import DetectorFactory
 
 
@@ -58,7 +60,7 @@ if DEBUG:
 else:
     log_level = logging.INFO
 
-VERSION = "0.4.0"
+VERSION = "0.4.1"
 
 # Prepare logging, before reading specification only log on console
 MLOG = shared.simple_logger(loger_name="scrapy_wrapper")
@@ -85,6 +87,42 @@ def load_settings(settings_path) -> CrawlSpecification:
 
     return settings
 
+
+class VerboseLxmlLinkExtractor(LxmlLinkExtractor):
+
+    def __init__(self, logname="scrapy_wrapper", spec=None, **kwargs):
+        super().__init__(**kwargs)
+        if spec.logs:
+            self.logger = shared.simple_logger(loger_name="linkextractor",
+                                               file_path=os.path.join(spec.logs, logname + ".log")
+                                              )
+
+    def _link_allowed(self, link):
+        _matches = lambda url, regexs: any(r.search(url) for r in regexs)
+        _is_valid_url = lambda url: url.split('://', 1)[0] in {'http', 'https', 'file', 'ftp'}
+
+        if not _is_valid_url(link.url):
+            self.logger.warning(f"Not allowed: {link.url} // no valid url")
+            return False
+        if self.allow_res and not _matches(link.url, self.allow_res):
+            self.logger.warning(f"Not allowed: {link.url} // does not match whitelist")
+            return False
+        if self.deny_res and _matches(link.url, self.deny_res):
+            self.logger.warning(f"Not allowed: {link.url} // matches blacklist")
+            return False
+        parsed_url = urlparse(link.url)
+        if self.allow_domains and not url_is_from_any_domain(parsed_url, self.allow_domains):
+            self.logger.warning(f"Not allowed: {link.url} // domain not listed as allowed")
+            return False
+        if self.deny_domains and url_is_from_any_domain(parsed_url, self.deny_domains):
+            self.logger.warning(f"Not allowed: {link.url} // domain is listed as denied")
+            return False
+        if self.deny_extensions and url_has_any_extension(parsed_url, self.deny_extensions):
+            self.logger.warning(f"Not allowed: {link.url} // extension is denied")
+            return False
+        if self.restrict_text and not _matches(link.text, self.restrict_text):
+            return False
+        return True
 
 def create_spider(settings, start_url, crawler_name):
     class GenericCrawlSpider(CrawlSpider):
@@ -114,11 +152,14 @@ def create_spider(settings, start_url, crawler_name):
                              )
 
         rules = [
-            Rule(LxmlLinkExtractor(deny=crawl_specification.blacklist,
-                                   allow=crawl_specification.whitelist,  # crawl only links behind the given start-url
-                                   deny_extensions=denied_extensions),
+            Rule(VerboseLxmlLinkExtractor(logname=crawler_name,
+                                          spec=crawl_specification,
+                                          deny=crawl_specification.blacklist,
+                                          allow=crawl_specification.whitelist,
+                                          deny_extensions=denied_extensions),
                  callback=parser.parse,
-                 follow=True)
+                 follow=True,
+                 errback=parser.errback)
         ]
 
         # ensure that start_urls are also parsed
@@ -141,6 +182,7 @@ def create_spider(settings, start_url, crawler_name):
             for hand in self.s_log.handlers:
                 self.logger.logger.addHandler(hand)
             self.s_log.info("[__init__] - Crawlspider logger setup finished.")
+
 
         def start_requests(self):
             for url in self.start_urls:
@@ -229,7 +271,8 @@ def get_info():
                                  for cls in pipelines.ContentPipeline.__subclasses__()]
 
     import parsers
-    info["parsers"] = {".".join((cls.__module__, cls.__name__)): cls.ACCEPTED_PIPELINES
+    info["parsers"] = {".".join((cls.__module__, cls.__name__)):
+                           [".".join((ppl.__module__, ppl.__name__)) for ppl in cls.ACCEPTED_PIPELINES]
                        for cls in parsers.ResponseParser.__subclasses__()}
 
     return info
@@ -255,6 +298,7 @@ def generate_template_specification(parser_class=None):
                               finalizers={"<Finalizer Class>": "<Finalizer Data Dictionary>"})
     return spec
 
+
 if __name__ == '__main__':
 
     # get call parameter
@@ -266,7 +310,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     if call_parameter == "INFO":
-        print(get_info())
+        print(json.dumps(get_info()))
         sys.exit(0)
 
     # start crawling

@@ -1,6 +1,6 @@
 {
-    "blacklist": [],
-    "whitelist": [],
+    "blacklist": [".*blacklist.*"],
+    "whitelist": ["linkextractor", ".*text.*", "https://crawlme.maxpensel.de/forbidden"],
 	"finalizers": {},
     "logs": "tests/results/local_par_logs",
     "name": "test",
