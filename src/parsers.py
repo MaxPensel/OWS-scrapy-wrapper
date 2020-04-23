@@ -60,6 +60,9 @@ class ResponseParser:
         else:
             print("[{0}] {1}".format(level, message))
 
+    def errback(self, failure):
+        self.log(logging.WARN, f"Rule failure on {failure.request.url}: {failure.value}")
+
     @staticmethod
     def generate_example_data():
         return {"<Data Key>": "<Data Value>"}
@@ -208,9 +211,6 @@ class ParagraphParser(ResponseParser):
         if lang not in self.detected_languages:
             self.detected_languages[lang] = 0
         self.detected_languages[lang] += 1
-
-    def errback(self, failure):
-        self.log(logging.WARN, f"Rule failure on {failure.request.url}: {failure.value}")
 
     @staticmethod
     def generate_example_data():
