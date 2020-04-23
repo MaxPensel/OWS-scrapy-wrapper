@@ -61,7 +61,7 @@ if DEBUG:
 else:
     log_level = logging.INFO
 
-VERSION = "0.4.1"
+VERSION = "0.4.2"
 
 # Prepare logging, before reading specification only log on console
 MLOG = shared.simple_logger(loger_name="scrapy_wrapper")
