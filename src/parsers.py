@@ -94,7 +94,7 @@ class ParagraphParser(ResponseParser):
             self.data[ParagraphParser.KEY_KEEP_LANGDETECT_ERRORS] = True
 
         self.callbacks["text/html"] = self.parse_html
-        self.callbacks["application/pdf"] = self.parse_pdf
+        # self.callbacks["application/pdf"] = self.parse_pdf
 
         self.detected_languages = dict()
 
