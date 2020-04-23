@@ -23,6 +23,7 @@ along with OWS-scrapy-wrapper.  If not, see <https://www.gnu.org/licenses/>.
 
 import os
 import shutil
+import sys
 from urllib.parse import urlparse
 
 import math
@@ -132,11 +133,10 @@ class Raw2FilePipeline(ContentPipeline):
     def process_item(self, item, spider):
         url = item["url"]
         content = item["content"]
+
         p_url = urlparse(url)
         domain = p_url.netloc
         if domain in spider.allowed_domains:
-            spider.s_log.debug(f"[process_item] - Adding content for {url} to {spider.name}")
-
             domain_data_dir = os.path.join(spider.crawl_specification.output, spider.name)
 
             # careful, csv file may not exist for some reason (moved, deleted, ..)
@@ -151,8 +151,25 @@ class Raw2FilePipeline(ContentPipeline):
                     sep = "/"
 
                 filename = shared.url2filename(p_url.path + sep + "index.html")
-            mode = "w" if type(content) == str else "wb"
-            with open(os.path.join(domain_data_dir, filename), mode) as file:
+
+            # abbreviate and uniquify long filenames
+            cutoff = 100
+            insert = "(...)"
+            front = math.floor((cutoff - len(insert)) / 2)
+            back = math.ceil((cutoff - len(insert)) / 2)
+            if len(filename) > cutoff:
+                spider.s_log.warning(f"Abbreviating very long filename ({len(filename)} characters): {filename}")
+                filename = filename[:front] + insert + filename[-back:]
+                fn_unique = filename
+                unique = 1
+                while os.path.exists(os.path.join(domain_data_dir, fn_unique)):
+                    fn_unique = ".".join(filename.split(".")[:-1]) + f" ({unique})." + filename.split(".")[-1]
+                    unique += 1
+                filename = fn_unique
+
+
+            with open(os.path.join(domain_data_dir, filename), "wb") as file:
                 file.write(content)
+                spider.s_log.debug(f"[process_item] - Added content for {url} to {spider.name}")
 
         return item

@@ -33,6 +33,7 @@ import os
 from scrapy import Request
 
 import shared
+from parsers import ParagraphParser
 from shared import CrawlSpecification
 
 import pandas
@@ -60,7 +61,7 @@ if DEBUG:
 else:
     log_level = logging.INFO
 
-VERSION = "0.4.1"
+VERSION = "0.4.2"
 
 # Prepare logging, before reading specification only log on console
 MLOG = shared.simple_logger(loger_name="scrapy_wrapper")
@@ -144,12 +145,14 @@ def create_spider(settings, start_url, crawler_name):
 
         start_urls = [start_url]
 
-        denied_extensions = ('mng', 'pct', 'bmp', 'gif', 'jpg', 'jpeg', 'png', 'pst', 'psp', 'tif', 'tiff', 'ai', 'drw',
+        denied_extensions = ['mng', 'pct', 'bmp', 'gif', 'jpg', 'jpeg', 'png', 'pst', 'psp', 'tif', 'tiff', 'ai', 'drw',
                              'dxf', 'eps', 'ps', 'svg', 'mp3', 'wma', 'ogg', 'wav', 'ra', 'aac', 'mid', 'au', 'aiff',
                              '3gp', 'asf', 'asx', 'avi', 'mov', 'mp4', 'mpg', 'qt', 'rm', 'swf', 'wmv',
                              'm4a', 'm4v', 'flv', 'xls', 'xlsx', 'ppt', 'pptx', 'pps', 'doc', 'docx', 'odt', 'ods',
                              'odg', 'odp', 'css', 'exe', 'bin', 'rss', 'zip', 'rar', 'gz', 'tar'
-                             )
+                             ]
+        if isinstance(crawl_specification.parser, ParagraphParser):
+            denied_extensions.append("pdf")
 
         rules = [
             Rule(VerboseLxmlLinkExtractor(logname=crawler_name,

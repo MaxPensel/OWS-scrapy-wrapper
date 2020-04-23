@@ -60,6 +60,9 @@ class ResponseParser:
         else:
             print("[{0}] {1}".format(level, message))
 
+    def errback(self, failure):
+        self.log(logging.WARN, f"Rule failure on {failure.request.url}: {failure.value}")
+
     @staticmethod
     def generate_example_data():
         return {"<Data Key>": "<Data Value>"}
@@ -91,7 +94,7 @@ class ParagraphParser(ResponseParser):
             self.data[ParagraphParser.KEY_KEEP_LANGDETECT_ERRORS] = True
 
         self.callbacks["text/html"] = self.parse_html
-        self.callbacks["application/pdf"] = self.parse_pdf
+        # self.callbacks["application/pdf"] = self.parse_pdf
 
         self.detected_languages = dict()
 
@@ -209,9 +212,6 @@ class ParagraphParser(ResponseParser):
             self.detected_languages[lang] = 0
         self.detected_languages[lang] += 1
 
-    def errback(self, failure):
-        self.log(logging.WARN, f"Rule failure on {failure.request.url}: {failure.value}")
-
     @staticmethod
     def generate_example_data():
         return {ParagraphParser.KEY_LANGUAGES: ["de", "en", "any", "disabled"],
@@ -238,14 +238,9 @@ class RawParser(ResponseParser):
             self.callbacks[ct] = self.parse_response
 
     def parse_response(self, response):
-        if hasattr(response, 'text'):
-            cont = response.text
-            log_note = "as text"
-        else:
-            cont = response.body
-            log_note = "as bytes"
+        cont = response.body
 
-        self.log(logging.INFO, f"Storing response {response} {log_note}")
+        self.log(logging.INFO, f"Storing response {response}")
 
         return [RawContentItem(url=response.url, content=cont, depth=response.meta["depth"])]
 
